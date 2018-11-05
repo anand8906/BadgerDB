@@ -1,0 +1,3 @@
+/Users/anandpotamsetti/Desktop/MS-UWM/Semester-3/CS564_DBMS/PP2/BufMgr/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/anandpotamsetti/Desktop/MS-UWM/Semester-3/CS564_DBMS/PP2/BufMgr/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/anandpotamsetti/Desktop/MS-UWM/Semester-3/CS564_DBMS/PP2/BufMgr/cmake-build-debug/CMakeFiles/BufMgr.dir
