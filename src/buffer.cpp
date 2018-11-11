@@ -36,6 +36,18 @@ BufMgr::BufMgr(std::uint32_t bufs)
 
 
 BufMgr::~BufMgr() {
+    for(int i=0;i<numBufs;i++) {
+        if(bufDescTable[i].file!=NULL && File::isOpen(bufDescTable[i].file->filename())) {
+            if(bufDescTable[i].dirty) {
+                if(!bufDescTable[i].valid) throw BadBufferException(bufDescTable[i].frameNo,bufDescTable[i].dirty, bufDescTable[i].valid, bufDescTable[i].refbit);
+                bufDescTable[i].file->writePage(bufPool[bufDescTable[i].frameNo]);
+                bufDescTable[i].dirty=false;
+            }
+        }
+    }
+    delete[] bufPool;
+    delete[] bufDescTable;
+    delete hashTable;
 }
 
 void BufMgr::advanceClock()
@@ -45,11 +57,12 @@ void BufMgr::advanceClock()
 
 void BufMgr::allocBuf(FrameId & frame) 
 {
-    //can go to infinite loop
+    //Stop when all the positions are checked..
     int i=0;
     bool found=false;
     while(i<=numBufs)
     {
+        //if(!bufDescTable[clockHand].valid) {found=true; frame=clockHand; }
         if(bufDescTable[clockHand].refbit==0 && bufDescTable[clockHand].pinCnt==0)
         {
             if(bufDescTable[clockHand].valid) {
@@ -75,6 +88,7 @@ void BufMgr::readPage(File* file, const PageId pageNo, Page*& page)
         FrameId frame;
         hashTable->lookup(file, pageNo, frame);
         page=&bufPool[frame];
+        bufDescTable[frame].refbit=true;
         bufDescTable[frame].pinCnt++;
     }
     catch(HashNotFoundException e)
@@ -115,7 +129,8 @@ void BufMgr::flushFile(const File* file)
             FrameId frame;
             hashTable->lookup(file,pageNo,frame);
             if(bufDescTable[i].pinCnt!=0) throw PagePinnedException(file->filename(),bufDescTable[i].pageNo,frame);
-            if(bufDescTable[i].dirty) bufDescTable[i].file->writePage(bufPool[frame]);
+            if(!bufDescTable[i].valid) throw BadBufferException(bufDescTable[i].frameNo,bufDescTable[i].dirty,bufDescTable[i].valid,bufDescTable[i].refbit);
+            if(bufDescTable[i].dirty) { bufDescTable[i].file->writePage(bufPool[frame]); bufDescTable[i].dirty=false; }
             hashTable->remove(file,pageNo);
             bufDescTable[i].Clear();
         }
@@ -140,13 +155,15 @@ void BufMgr::disposePage(File* file, const PageId PageNo)
     {
         FrameId frame;
         hashTable->lookup(file,PageNo,frame);
+        if(bufDescTable[frame].pinCnt > 0) throw PagePinnedException(bufDescTable[frame].file->filename(), bufDescTable[frame].pageNo, bufDescTable[frame].frameNo);
         hashTable->remove(file,PageNo);
         bufDescTable[frame].Clear();
     }
     catch (HashNotFoundException e)
     {
-        file->deletePage(PageNo);
+
     }
+    file->deletePage(PageNo);
 }
 
 void BufMgr::printSelf(void) 
