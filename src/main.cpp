@@ -36,6 +36,7 @@ void test3();
 void test4();
 void test5();
 void test6();
+void test7();
 void testBufMgr();
 
 int main() 
@@ -148,6 +149,7 @@ void testBufMgr()
 
 	test5();
 	test6();
+	test7();
 
 
 	//Close files before deleting them
@@ -321,4 +323,21 @@ void test6()
 		bufMgr->unPinPage(file1ptr, i, true);
 
 	bufMgr->flushFile(file1ptr);
+}
+
+
+void test7()
+{
+    //Checks the case when an invalid page is accessed
+    try
+    {
+        bufMgr->readPage(file1ptr, 101, page);
+        PRINT_ERROR("ERROR :: Pages pinned for file being flushed. Exception should have been thrown before execution reaches this point.");
+    }
+    catch(InvalidPageException e)
+    {
+
+    }
+
+    std::cout << "Test 7 passed" << "\n";
 }

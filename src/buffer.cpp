@@ -57,7 +57,7 @@ void BufMgr::advanceClock()
 
 void BufMgr::allocBuf(FrameId & frame) 
 {
-    //Stop when all the positions are checked..
+    //i is a counter to check if the clockHand completed a cycle.
     int i=0;
     bool found=false;
     while(i<=numBufs)
@@ -65,6 +65,10 @@ void BufMgr::allocBuf(FrameId & frame)
         //if(!bufDescTable[clockHand].valid) {found=true; frame=clockHand; }
         if(bufDescTable[clockHand].refbit==0 && bufDescTable[clockHand].pinCnt==0)
         {
+            /*
+             *  found a page that can be replaced by writing contents back to file if
+             *  page is still valid and dirty is set to true
+             */
             if(bufDescTable[clockHand].valid) {
                 if (bufDescTable[clockHand].dirty) bufDescTable[clockHand].file->writePage(bufPool[clockHand]);
                 hashTable->remove(bufDescTable[clockHand].file, bufDescTable[clockHand].pageNo);
@@ -77,7 +81,10 @@ void BufMgr::allocBuf(FrameId & frame)
         advanceClock();
         i++;
     }
-    if(!found) { throw BufferExceededException(); }
+    if(!found) {
+        //no place in the buffer for new page. throw exception
+        throw BufferExceededException();
+    }
 }
 
 	
